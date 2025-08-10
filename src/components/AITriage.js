@@ -3,13 +3,14 @@
 import { useState } from 'react'
 import { toast } from 'react-hot-toast'
 import { Brain, AlertTriangle, CheckCircle, Clock, User, Activity, FileText, Building2 } from 'lucide-react'
-import { performAITriage } from '../lib/ai'
+import { performAITriage, testAIConnection } from '../lib/ai'
 import { logAITriageDecision } from '../lib/blockchain'
 
 export default function AITriage({ patient, onTriageComplete }) {
   const [isProcessing, setIsProcessing] = useState(false)
   const [triageResult, setTriageResult] = useState(null)
   const [showHistory, setShowHistory] = useState(false)
+  const [connectionTest, setConnectionTest] = useState(null)
 
   const handleAITriage = async () => {
     if (!patient) {
@@ -54,6 +55,21 @@ export default function AITriage({ patient, onTriageComplete }) {
       toast.error(`AI triage error: ${error.message}`)
     } finally {
       setIsProcessing(false)
+    }
+  }
+
+  const handleTestConnection = async () => {
+    try {
+      const result = await testAIConnection()
+      setConnectionTest(result)
+      if (result.success) {
+        toast.success('AI connection test successful!')
+      } else {
+        toast.error(`AI connection test failed: ${result.error}`)
+      }
+    } catch (error) {
+      console.error('Connection test error:', error)
+      toast.error('Connection test failed')
     }
   }
 
@@ -124,7 +140,7 @@ export default function AITriage({ patient, onTriageComplete }) {
       </div>
 
       {/* AI Triage Button */}
-      <div className="p-6">
+      <div className="p-6 space-y-3">
         <button
           onClick={handleAITriage}
           disabled={isProcessing}
@@ -142,15 +158,30 @@ export default function AITriage({ patient, onTriageComplete }) {
             </>
           )}
         </button>
+        
+        <button
+          onClick={handleTestConnection}
+          className="w-full bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center text-sm"
+        >
+          Test AI Connection
+        </button>
       </div>
 
-      {/* Triage Results */}
-      {triageResult && (
-        <div className="p-6 bg-gradient-to-r from-purple-50 to-blue-50 border-t border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <CheckCircle className="w-5 h-5 text-green-600 mr-2" />
-            AI Triage Assessment Complete
-          </h3>
+                {/* Triage Results */}
+          {triageResult && (
+            <div className="p-6 bg-gradient-to-r from-purple-50 to-blue-50 border-t border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <CheckCircle className="w-5 h-5 text-green-600 mr-2" />
+                {triageResult.isFallback ? 'Fallback Triage Assessment' : 'AI Triage Assessment Complete'}
+              </h3>
+              
+              {triageResult.isFallback && (
+                <div className="mb-4 p-3 bg-yellow-100 border border-yellow-300 rounded-lg">
+                  <p className="text-sm text-yellow-800">
+                    <strong>Note:</strong> AI service unavailable. Using intelligent fallback assessment based on symptoms.
+                  </p>
+                </div>
+              )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Urgency Level */}
@@ -198,7 +229,7 @@ export default function AITriage({ patient, onTriageComplete }) {
             <div className="mt-6 bg-red-50 rounded-lg p-4 border border-red-200">
               <h4 className="font-semibold text-red-800 mb-3 flex items-center">
                 <AlertTriangle className="w-4 h-4 mr-2" />
-                Immediate Concerns
+                {triageResult.error ? 'AI Processing Error' : 'Immediate Concerns'}
               </h4>
               <ul className="space-y-2">
                 {triageResult.concerns.map((concern, index) => (
@@ -208,6 +239,13 @@ export default function AITriage({ patient, onTriageComplete }) {
                   </li>
                 ))}
               </ul>
+              {triageResult.error && (
+                <div className="mt-3 p-3 bg-red-100 rounded border border-red-300">
+                  <p className="text-sm text-red-800 font-mono break-all">
+                    <strong>Technical Details:</strong> {triageResult.error}
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
@@ -230,6 +268,22 @@ export default function AITriage({ patient, onTriageComplete }) {
               <CheckCircle className="w-4 h-4 mr-2" />
               <span>Triage decision logged to blockchain ledger</span>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Connection Test Results */}
+      {connectionTest && (
+        <div className="p-6 bg-gray-50 border-t border-gray-100">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">AI Connection Test Results</h3>
+          <div className={`text-sm p-3 rounded-lg ${connectionTest.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+            <p><strong>Status:</strong> {connectionTest.success ? 'Connected' : 'Failed'}</p>
+            {connectionTest.success && connectionTest.models && (
+              <p className="mt-2"><strong>Available Models:</strong> {connectionTest.models.map(m => m.id).join(', ')}</p>
+            )}
+            {!connectionTest.success && (
+              <p className="mt-2"><strong>Error:</strong> {connectionTest.error}</p>
+            )}
           </div>
         </div>
       )}
