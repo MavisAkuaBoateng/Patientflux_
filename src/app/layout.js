@@ -8,7 +8,6 @@ export const metadata = {
   title: 'PatientFlux - Hospital Patient Flow Management',
   description: 'Cloud-native hospital OPD scheduling and patient-flow management platform for Korle-Bu Teaching Hospital',
   // PWA Metadata
-  manifest: '/manifest.json',
   themeColor: '#7c3aed',
   viewport: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover',
   // Open Graph metadata for better social sharing
