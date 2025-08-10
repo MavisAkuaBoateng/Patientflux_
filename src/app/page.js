@@ -11,6 +11,7 @@ import {
   Database,
   Brain
 } from 'lucide-react'
+import PWAInstall from '../components/PWAInstall'
 
 export default function HomePage() {
   const features = [
@@ -105,36 +106,31 @@ export default function HomePage() {
       <div className="max-w-7xl mx-auto px-6 py-16">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            Core Features
+            Complete Hospital Management
           </h2>
-          <p className="text-lg text-gray-600">
-            Everything you need to manage hospital patient flow efficiently
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Everything you need to manage patient flow, from check-in to discharge
           </p>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {features.map((feature, index) => {
-            const Icon = feature.icon
-            return (
-              <Link 
-                key={index}
-                href={feature.href}
-                className="group block"
-              >
-                <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-all duration-200 group-hover:scale-105">
-                  <div className={`w-16 h-16 bg-gradient-to-r ${feature.color} rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-200`}>
-                    <Icon className="w-8 h-8 text-white" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                    {feature.title}
-                  </h3>
-                  <p className="text-gray-600">
-                    {feature.description}
-                  </p>
-                </div>
-              </Link>
-            )
-          })}
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {features.map((feature, index) => (
+            <Link
+              key={index}
+              href={feature.href}
+              className="group bg-white rounded-xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+            >
+              <div className={`w-12 h-12 rounded-lg bg-gradient-to-br ${feature.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
+                <feature.icon className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                {feature.title}
+              </h3>
+              <p className="text-gray-600 text-sm leading-relaxed">
+                {feature.description}
+              </p>
+            </Link>
+          ))}
         </div>
       </div>
 
@@ -143,48 +139,36 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-6 py-16">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Why PatientFlux?
+              Advanced Features
             </h2>
-            <p className="text-lg text-gray-600">
-              Built with modern technology for healthcare excellence
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Cutting-edge technology for modern healthcare management
             </p>
           </div>
-
+          
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {highlights.map((highlight, index) => {
-              const Icon = highlight.icon
-              return (
-                <div key={index} className="text-center">
-                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Icon className="w-8 h-8 text-blue-600" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    {highlight.title}
-                  </h3>
-                  <p className="text-gray-600 text-sm">
-                    {highlight.description}
-                  </p>
+            {highlights.map((highlight, index) => (
+              <div
+                key={index}
+                className="text-center p-6"
+              >
+                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <highlight.icon className="w-8 h-8 text-white" />
                 </div>
-              )
-            })}
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  {highlight.title}
+                </h3>
+                <p className="text-gray-600 text-sm leading-relaxed">
+                  {highlight.description}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="bg-gray-900 text-white">
-        <div className="max-w-7xl mx-auto px-6 py-12">
-          <div className="text-center">
-            <h3 className="text-2xl font-bold mb-4">PatientFlux</h3>
-            <p className="text-gray-400 mb-6">
-              Empowering healthcare professionals with intelligent patient flow management
-            </p>
-            <div className="text-sm text-gray-500">
-              © 2024 Korle-Bu Teaching Hospital. Built with Next.js, Supabase, and AI.
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* PWA Install Prompt */}
+      <PWAInstall />
     </div>
   )
 }
