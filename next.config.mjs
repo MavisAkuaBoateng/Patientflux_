@@ -2,13 +2,11 @@ import withPWA from 'next-pwa'
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Image optimization for PWA icons
   images: {
     domains: [],
     formats: ['image/webp', 'image/avif'],
   },
-  
-  // Headers for PWA security and caching
+
   async headers() {
     return [
       {
@@ -33,7 +31,6 @@ const nextConfig = {
   },
 }
 
-// PWA Configuration with next-pwa
 const pwaConfig = withPWA({
   dest: 'public',
   register: true,
@@ -41,7 +38,6 @@ const pwaConfig = withPWA({
   disable: process.env.NODE_ENV === 'development',
   runtimeCaching: [
     {
-      // Cache API responses for offline access
       urlPattern: /^https:\/\/.*\.supabase\.co\/.*$/,
       handler: 'NetworkFirst',
       options: {
@@ -50,13 +46,9 @@ const pwaConfig = withPWA({
           maxEntries: 100,
           maxAgeSeconds: 60 * 60 * 24, // 24 hours
         },
-        cacheKeyWillBeUsed: async ({ request }) => {
-          return `${request.url}`
-        },
       },
     },
     {
-      // Cache static assets
       urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|ico|woff|woff2|ttf|eot)$/,
       handler: 'CacheFirst',
       options: {
@@ -68,7 +60,6 @@ const pwaConfig = withPWA({
       },
     },
     {
-      // Cache CSS and JS files
       urlPattern: /\.(?:css|js)$/,
       handler: 'StaleWhileRevalidate',
       options: {
@@ -80,7 +71,6 @@ const pwaConfig = withPWA({
       },
     },
     {
-      // Cache HTML pages for offline access
       urlPattern: /^https:\/\/.*\/.*$/,
       handler: 'NetworkFirst',
       options: {
@@ -92,34 +82,7 @@ const pwaConfig = withPWA({
       },
     },
   ],
-  // Custom service worker for advanced caching strategies
   sw: '/sw.js',
-  // PWA manifest
-  manifest: {
-    name: 'PatientFlux - Hospital OPD Management',
-    short_name: 'PatientFlux',
-    description: 'Cloud-native hospital OPD scheduling and patient-flow management platform',
-    theme_color: '#7c3aed',
-    background_color: '#ffffff',
-    display: 'standalone',
-    orientation: 'portrait-primary',
-    scope: '/',
-    start_url: '/',
-    icons: [
-      {
-        src: '/icons/icon-192x192.png',
-        sizes: '192x192',
-        type: 'image/png',
-        purpose: 'maskable any',
-      },
-      {
-        src: '/icons/icon-512x512.png',
-        sizes: '512x512',
-        type: 'image/png',
-        purpose: 'maskable any',
-      },
-    ],
-  },
 })
 
 export default pwaConfig(nextConfig)
