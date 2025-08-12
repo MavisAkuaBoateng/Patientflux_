@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
-import { Clock, User, Building2, AlertTriangle, CheckCircle, Play, Pause, Square } from 'lucide-react'
+import { Clock, User, Building2, AlertTriangle, CheckCircle, Play, Pause, Square, ChevronLeft, ChevronRight } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { toast } from 'react-hot-toast'
 
@@ -22,6 +22,10 @@ export default function QueueDisplay({ userRole = 'receptionist', department = n
   const [error, setError] = useState(null)
   const [selectedDepartment, setSelectedDepartment] = useState(department)
   const [autoRefresh, setAutoRefresh] = useState(true)
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1)
+  const [rowsPerPage, setRowsPerPage] = useState(10)
 
   // Hospital departments for filtering
   const departments = [
@@ -91,6 +95,9 @@ export default function QueueDisplay({ userRole = 'receptionist', department = n
 
       setPatients(data || [])
       setError(null)
+      
+      // Reset to first page when data changes
+      setCurrentPage(1)
     } catch (err) {
       console.error('Error fetching patients:', err)
       setError(err.message)
@@ -143,6 +150,23 @@ export default function QueueDisplay({ userRole = 'receptionist', department = n
       case 'completed': return 'bg-green-100 text-green-800'
       default: return 'bg-gray-100 text-gray-800'
     }
+  }
+
+  // Pagination calculations
+  const totalPages = Math.ceil(patients.length / rowsPerPage)
+  const startIndex = (currentPage - 1) * rowsPerPage
+  const endIndex = startIndex + rowsPerPage
+  const currentPatients = patients.slice(startIndex, endIndex)
+
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage)
+    }
+  }
+
+  const handleRowsPerPageChange = (newRowsPerPage) => {
+    setRowsPerPage(newRowsPerPage)
+    setCurrentPage(1) // Reset to first page when changing rows per page
   }
 
   if (loading) {
@@ -238,109 +262,163 @@ export default function QueueDisplay({ userRole = 'receptionist', department = n
             <p>All patients have been attended to or the queue is empty.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Queue
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Patient
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Department
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Visit Type
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Priority
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Wait Time
-                  </th>
-                  {userRole === 'doctor' && (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
+                      Queue
                     </th>
-                  )}
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                                        {patients.map((patient, index) => (
-                          <tr 
-                            key={patient.id} 
-                            className="hover:bg-gray-50 transition-colors cursor-pointer"
-                            onClick={() => onPatientSelect && onPatientSelect(patient)}
-                          >
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-center">
-                        <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-sm mx-auto">
-                          {patient.queue_position || index + 1}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center mr-3">
-                          <User className="w-5 h-5 text-gray-600" />
-                        </div>
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">{patient.name}</div>
-                          <div className="text-sm text-gray-500">
-                            ID: {patient.patient_id} • Age: {patient.age} • {patient.gender}
-                          </div>
-                          {patient.is_high_risk && (
-                            <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 mt-1">
-                              <AlertTriangle className="w-3 h-3 mr-1" />
-                              High Risk
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <Building2 className="w-4 h-4 text-gray-400 mr-2" />
-                        <span className="text-sm text-gray-900">{patient.department}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm text-gray-900">{patient.visit_type}</span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getPriorityColor(patient.priority)}`}>
-                        {getPriorityIcon(patient.priority)}
-                        <span className="ml-1">{patient.priority}</span>
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDistanceToNow(new Date(patient.check_in_time), { addSuffix: true })}
-                    </td>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Patient
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Department
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Visit Type
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Priority
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Wait Time
+                    </th>
                     {userRole === 'doctor' && (
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => updatePatientStatus(patient.patient_id, 'in-progress')}
-                            className="text-blue-600 hover:text-blue-900 px-2 py-1 rounded hover:bg-blue-50"
-                          >
-                            Start
-                          </button>
-                          <button
-                            onClick={() => updatePatientStatus(patient.patient_id, 'completed')}
-                            className="text-green-600 hover:text-green-900 px-2 py-1 rounded hover:bg-green-50"
-                          >
-                            Complete
-                          </button>
-                        </div>
-                      </td>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
                     )}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {currentPatients.map((patient, index) => (
+                    <tr 
+                      key={patient.id} 
+                      className="hover:bg-gray-50 transition-colors cursor-pointer"
+                      onClick={() => onPatientSelect && onPatientSelect(patient)}
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-center">
+                          <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-sm mx-auto">
+                            {startIndex + index + 1}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center mr-3">
+                            <User className="w-5 h-5 text-gray-600" />
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">{patient.name}</div>
+                            <div className="text-sm text-gray-500">
+                              ID: {patient.patient_id} • Age: {patient.age} • {patient.gender}
+                            </div>
+                            {patient.is_high_risk && (
+                              <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 mt-1">
+                                <AlertTriangle className="w-3 h-3 mr-1" />
+                                High Risk
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <Building2 className="w-4 h-4 text-gray-400 mr-2" />
+                          <span className="text-sm text-gray-900">{patient.department}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="text-sm text-gray-900">{patient.visit_type}</span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getPriorityColor(patient.priority)}`}>
+                          {getPriorityIcon(patient.priority)}
+                          <span className="ml-1">{patient.priority}</span>
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {formatDistanceToNow(new Date(patient.check_in_time), { addSuffix: true })}
+                      </td>
+                      {userRole === 'doctor' && (
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                updatePatientStatus(patient.patient_id, 'in-progress')
+                              }}
+                              className="text-blue-600 hover:text-blue-900 px-2 py-1 rounded hover:bg-blue-50"
+                            >
+                              Start
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                updatePatientStatus(patient.patient_id, 'completed')
+                              }}
+                              className="text-green-600 hover:text-green-900 px-2 py-1 rounded hover:bg-green-50"
+                            >
+                              Complete
+                            </button>
+                          </div>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination Controls */}
+            <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <span className="text-sm text-gray-700">
+                    Showing {startIndex + 1} to {Math.min(endIndex, patients.length)} of {patients.length} patients
+                  </span>
+                  <label className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-700">Rows per page:</span>
+                    <select
+                      value={rowsPerPage}
+                      onChange={(e) => handleRowsPerPageChange(Number(e.target.value))}
+                      className="px-2 py-1 border border-gray-300 rounded text-sm"
+                    >
+                      <option value={5}>5</option>
+                      <option value={10}>10</option>
+                      <option value={20}>20</option>
+                      <option value={50}>50</option>
+                    </select>
+                  </label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  
+                  <span className="text-sm text-gray-700">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </>
         )}
       </div>
 

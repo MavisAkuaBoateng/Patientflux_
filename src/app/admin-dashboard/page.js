@@ -12,9 +12,10 @@ import {
   Search,
   Database,
   Shield,
-  TrendingUp
+  TrendingUp,
+  User,
+  Calendar
 } from 'lucide-react'
-import { processNaturalLanguageQuery } from '../../lib/ai'
 
 export default function AdminDashboardPage() {
   const [query, setQuery] = useState('')
@@ -55,9 +56,26 @@ export default function AdminDashboardPage() {
     setQueryResult(null)
 
     try {
-      const result = await processNaturalLanguageQuery(query)
+      const response = await fetch('/api/ai/query', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query: query.trim() })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to process query')
+      }
+
+      const result = await response.json()
       setQueryResult(result)
-      toast.success('Query processed successfully!')
+      
+      if (result.resultType === 'error') {
+        toast.error(result.interpretation)
+      } else {
+        toast.success('Query processed successfully!')
+      }
     } catch (error) {
       console.error('Query processing error:', error)
       toast.error('Failed to process query. Please try again.')
@@ -74,6 +92,10 @@ export default function AdminDashboardPage() {
       case 'low': return 'bg-green-100 text-green-800'
       default: return 'bg-gray-100 text-gray-800'
     }
+  }
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleString()
   }
 
   return (
@@ -157,11 +179,81 @@ export default function AdminDashboardPage() {
 
               {/* Query Results */}
               {queryResult && (
-                <div className="mt-6 p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
-                  <h3 className="font-semibold text-indigo-900 mb-2">Query Result:</h3>
-                  <div className="text-indigo-800">
-                    <pre className="whitespace-pre-wrap text-sm">{JSON.stringify(queryResult, null, 2)}</pre>
+                <div className="mt-6 space-y-4">
+                  {/* Query Interpretation */}
+                  <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
+                    <h3 className="font-semibold text-indigo-900 mb-2">Query Interpretation:</h3>
+                    <p className="text-indigo-800">{queryResult.interpretation}</p>
                   </div>
+
+                  {/* Filters Applied */}
+                  {queryResult.filters && Object.keys(queryResult.filters).length > 0 && (
+                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <h3 className="font-semibold text-blue-900 mb-2">Filters Applied:</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {Object.entries(queryResult.filters).map(([key, value]) => (
+                          <span key={key} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm">
+                            {key}: {value.toString()}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Patient Data */}
+                  {queryResult.data && queryResult.data.length > 0 && (
+                    <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                      <h3 className="font-semibold text-green-900 mb-4">
+                        Results ({queryResult.data.length} patients found):
+                      </h3>
+                      <div className="space-y-3 max-h-96 overflow-y-auto">
+                        {queryResult.data.map((patient, index) => (
+                          <div key={patient.id || index} className="bg-white p-3 rounded-lg border border-green-200">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-3">
+                                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                                  <User className="w-4 h-4 text-green-600" />
+                                </div>
+                                <div>
+                                  <div className="font-medium text-gray-900">{patient.name}</div>
+                                  <div className="text-sm text-gray-500">
+                                    ID: {patient.patient_id} • Age: {patient.age} • {patient.gender}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <span className={`px-2 py-1 rounded text-xs font-medium ${getPriorityColor(patient.priority)}`}>
+                                  {patient.priority}
+                                </span>
+                                <span className="text-sm text-gray-500">{patient.department}</span>
+                              </div>
+                            </div>
+                            {patient.is_high_risk && (
+                              <div className="mt-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                <AlertTriangle className="w-3 h-3 mr-1" />
+                                High Risk
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Error or No Results */}
+                  {queryResult.resultType === 'error' && (
+                    <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                      <h3 className="font-semibold text-red-900 mb-2">Query Error:</h3>
+                      <p className="text-red-800">{queryResult.interpretation}</p>
+                    </div>
+                  )}
+
+                  {queryResult.data && queryResult.data.length === 0 && queryResult.resultType !== 'error' && (
+                    <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <h3 className="font-semibold text-yellow-900 mb-2">No Results Found:</h3>
+                      <p className="text-yellow-800">No patients match the specified criteria.</p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
