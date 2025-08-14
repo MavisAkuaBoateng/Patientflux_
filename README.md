@@ -1,3 +1,15 @@
+Problem Statement 6: AI-Assisted OPD Scheduling and Patient Flow Management System
+Outpatient flow is currently unstructured, leading to long wait times and missed cases.
+Need: An AI-driven system that can:
+Use QR/mobile check-ins for registration
+Categorize patients (new, follow-up, post-op)
+Prioritize vulnerable patients
+Display real-time queues
+Notify doctors about each patient’s category and position
+Sync attendance logs to EMRs and research systems
+Identify patterns in no-shows or high-risk patients
+
+
 # PatientFlux - Hospital OPD Management Platform
 
 A cloud-native hospital OPD scheduling and patient-flow management platform for Korle-Bu Teaching Hospital. Built with Next.js, Supabase, AI integration, and blockchain technology.
