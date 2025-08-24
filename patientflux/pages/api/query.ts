@@ -101,6 +101,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   } catch (err: any) {
     console.error('Supabase query failed:', err.message || err);
-    return res.status(500).json({ error: 'Server error' });
+    return res.status(500).json({ error: 'Server error', summary: 'Query failed due to server error.' });
   }
 }
