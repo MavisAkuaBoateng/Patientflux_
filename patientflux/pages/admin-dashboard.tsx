@@ -8,20 +8,33 @@ export default function AdminDashboard() {
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
-  async function runQuery() {
-    setLoading(true);
-    setResult(null);
+async function runQuery() {
+  setLoading(true);
+  setResult(null);
 
-    const endpoint = mode === "hospital" ? "/api/query" : "/api/chat"; // toggle between APIs
-    const res = await fetch(endpoint, {
+  let endpoint = mode === "hospital" ? "/api/query" : "/api/chat";
+
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query }),
+  });
+
+  let data = await res.json();
+
+  // 🔥 Auto-fallback: if hospital query failed, retry with chat
+  if (mode === "hospital" && data?.error === "unrecognized_query") {
+    const chatRes = await fetch("/api/chat", {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ query }),
     });
-    const data = await res.json();
-    setResult(data);
-    setLoading(false);
+    data = await chatRes.json();
   }
+
+  setResult(data);
+  setLoading(false);
+}
 
   return (
     <DashboardLayout title="Admin Dashboard">
