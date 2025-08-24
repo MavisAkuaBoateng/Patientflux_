@@ -48,6 +48,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const summary = rows.length
         ? 'Current waiting patients by department: ' + rows.map(r => `${r.department}: ${r.count}`).join(', ')
         : 'No patients are currently waiting.';
+// Fallback: if no rule matched and query is unrecognized
+return res.status(400).json({
+  error: "unrecognized_query",
+  message: "Query not understood, try chat fallback"
+});
 
       return res.status(200).json({ rows, summary });
     }
