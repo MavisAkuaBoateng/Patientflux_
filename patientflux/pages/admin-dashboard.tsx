@@ -6,19 +6,18 @@ export default function AdminDashboard() {
   const [query, setQuery] = useState("Show today's high-risk patients");
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [mode, setMode] = useState<"db" | "chat">("db"); // NEW toggle state
 
   async function runQuery() {
     setLoading(true);
     setResult(null);
 
-    // Simple heuristic: if query is about hospital data → DB, else → Chat
-    const isDBQuery = /\b(patients?|queue|doctor|department|wait time|blockchain|check-in|seen)\b/i.test(query);
-    const endpoint = isDBQuery ? '/api/query' : '/api/chat';
+    const endpoint = mode === "db" ? "/api/query" : "/api/chat";
 
     try {
       const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query }),
       });
       const data = await res.json();
@@ -42,17 +41,40 @@ export default function AdminDashboard() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
+
+            {/* Mode toggle */}
+            <div className="flex items-center space-x-4 mb-3">
+              <label className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  value="db"
+                  checked={mode === "db"}
+                  onChange={() => setMode("db")}
+                />
+                <span>Database Query</span>
+              </label>
+              <label className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  value="chat"
+                  checked={mode === "chat"}
+                  onChange={() => setMode("chat")}
+                />
+                <span>General Q&A</span>
+              </label>
+            </div>
+
             <button
               className="btn"
               onClick={runQuery}
               disabled={loading}
             >
-              {loading ? 'Running...' : 'Run Query'}
+              {loading ? "Running..." : "Run Query"}
             </button>
           </div>
 
           {/* Database table results */}
-          {result?.rows && (
+          {mode === "db" && result?.rows && (
             <div className="card p-4">
               <h3 className="text-lg font-semibold mb-2">Results</h3>
               <div className="overflow-x-auto">
@@ -89,7 +111,7 @@ export default function AdminDashboard() {
           )}
 
           {/* General Q&A answer */}
-          {result?.text && (
+          {mode === "chat" && result?.text && (
             <div className="card p-4">
               <h3 className="text-lg font-semibold mb-2">Answer</h3>
               <p>{result.text}</p>
