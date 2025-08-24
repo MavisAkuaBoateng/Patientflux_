@@ -10,13 +10,24 @@ export default function AdminDashboard() {
   async function runQuery() {
     setLoading(true);
     setResult(null);
-    const res = await fetch('/api/query', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query }),
-    });
-    const data = await res.json();
-    setResult(data);
+
+    // Simple heuristic: if query is about hospital data → DB, else → Chat
+    const isDBQuery = /\b(patients?|queue|doctor|department|wait time|blockchain|check-in|seen)\b/i.test(query);
+    const endpoint = isDBQuery ? '/api/query' : '/api/chat';
+
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query }),
+      });
+      const data = await res.json();
+      setResult(data);
+    } catch (err) {
+      console.error("Error running query:", err);
+      setResult({ error: "Something went wrong. Try again." });
+    }
+
     setLoading(false);
   }
 
@@ -26,10 +37,21 @@ export default function AdminDashboard() {
         <div className="lg:col-span-2 space-y-4">
           <div className="card p-4">
             <label className="label">Natural-language query</label>
-            <input className="input mb-3" value={query} onChange={(e) => setQuery(e.target.value)} />
-            <button className="btn" onClick={runQuery} disabled={loading}>{loading ? 'Running...' : 'Run Query'}</button>
+            <input
+              className="input mb-3"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+            <button
+              className="btn"
+              onClick={runQuery}
+              disabled={loading}
+            >
+              {loading ? 'Running...' : 'Run Query'}
+            </button>
           </div>
 
+          {/* Database table results */}
           {result?.rows && (
             <div className="card p-4">
               <h3 className="text-lg font-semibold mb-2">Results</h3>
@@ -38,7 +60,12 @@ export default function AdminDashboard() {
                   <thead className="bg-gray-50">
                     <tr>
                       {Object.keys(result.rows[0] || {}).map((k) => (
-                        <th key={k} className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{k}</th>
+                        <th
+                          key={k}
+                          className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          {k}
+                        </th>
                       ))}
                     </tr>
                   </thead>
@@ -46,13 +73,34 @@ export default function AdminDashboard() {
                     {result.rows.map((row: any, idx: number) => (
                       <tr key={idx}>
                         {Object.values(row).map((v: any, i: number) => (
-                          <td key={i} className="px-3 py-2 whitespace-nowrap">{String(v)}</td>
+                          <td
+                            key={i}
+                            className="px-3 py-2 whitespace-nowrap"
+                          >
+                            {String(v)}
+                          </td>
                         ))}
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
+            </div>
+          )}
+
+          {/* General Q&A answer */}
+          {result?.text && (
+            <div className="card p-4">
+              <h3 className="text-lg font-semibold mb-2">Answer</h3>
+              <p>{result.text}</p>
+            </div>
+          )}
+
+          {/* Errors */}
+          {result?.error && (
+            <div className="card p-4 text-red-600">
+              <h3 className="text-lg font-semibold mb-2">Error</h3>
+              <p>{result.error}</p>
             </div>
           )}
         </div>
